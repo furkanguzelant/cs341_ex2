@@ -411,11 +411,11 @@ vec3 lighting(
 	int mat_id;
 
 	
-	shadow = ray_intersection(object_point, shadow_ray, col_distance, col_normal, mat_id);
+	shadow = ray_intersection(object_point + object_normal * 1e-3, shadow_ray, col_distance, col_normal, mat_id);
 	
 
 	vec3 intersection_point = object_point + col_distance * shadow_ray;
-	if(shadow && col_distance < length(light.position - object_point) && col_distance > 1e-8)
+	if(shadow && col_distance < length(light.position - object_point) && col_distance > 1e-4)
 		return vec3(0., 0., 0.);
 	
 
@@ -441,21 +441,21 @@ vec3 render_light(vec3 ray_origin, vec3 ray_direction) {
 	- compute the intensity contribution from each light in the scene and store the sum in pix_color
 	*/
 
+	
 	float col_distance;
 	vec3 col_normal;
 	int mat_id;
 	vec3 pix_color = vec3(0., 0., 0.);
-	if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
-
-		vec3 object_point = ray_origin + col_distance * ray_direction;
-		Material m = get_material(mat_id); // get material of the intersected object
-		vec3 direction_to_camera = -ray_direction;
-		vec3 ambient = light_color_ambient * m.ambient;
-		pix_color = ambient * m.color;
-		for(int i = 0; i < NUM_LIGHTS; i++) {
-			pix_color += lighting(object_point, col_normal, direction_to_camera, lights[i], m);
-		}                 
-	}
+		if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
+			vec3 object_point = ray_origin + col_distance * ray_direction;
+			Material m = get_material(mat_id); // get material of the intersected object
+			vec3 direction_to_camera = -ray_direction;
+			vec3 ambient = light_color_ambient * m.ambient;
+			pix_color = ambient * m.color;
+			for(int i = 0; i < NUM_LIGHTS; i++) {
+				pix_color += lighting(object_point, col_normal, direction_to_camera, lights[i], m);
+			}                 
+		}
 	return pix_color;
 
 	/** #TODO RT2.3.2: 
@@ -486,8 +486,9 @@ vec3 render_light(vec3 ray_origin, vec3 ray_direction) {
 
 	//vec3 pix_color = vec3(0.);
 
-	col_normal = vec3(0.);
-	mat_id = 0;
+	//float col_distance;
+	//vec3 col_normal = vec3(0.);
+	//int mat_id = 0;
 	if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
 		Material m = get_material(mat_id);
 		pix_color = m.color;

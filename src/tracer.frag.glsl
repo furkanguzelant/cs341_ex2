@@ -442,21 +442,6 @@ vec3 render_light(vec3 ray_origin, vec3 ray_direction) {
 	*/
 
 	
-	float col_distance;
-	vec3 col_normal;
-	int mat_id;
-	vec3 pix_color = vec3(0., 0., 0.);
-		if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
-			vec3 object_point = ray_origin + col_distance * ray_direction;
-			Material m = get_material(mat_id); // get material of the intersected object
-			vec3 direction_to_camera = -ray_direction;
-			vec3 ambient = light_color_ambient * m.ambient;
-			pix_color = ambient * m.color;
-			for(int i = 0; i < NUM_LIGHTS; i++) {
-				pix_color += lighting(object_point, col_normal, direction_to_camera, lights[i], m);
-			}                 
-		}
-	return pix_color;
 
 	/** #TODO RT2.3.2: 
 	- create an outer loop on the number of reflections (see below for a suggested structure)
@@ -484,22 +469,41 @@ vec3 render_light(vec3 ray_origin, vec3 ray_direction) {
 	}
 	*/
 
-	//vec3 pix_color = vec3(0.);
+	vec3 pix_color = vec3(0.);
 
-	//float col_distance;
-	//vec3 col_normal = vec3(0.);
-	//int mat_id = 0;
-	if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
-		Material m = get_material(mat_id);
-		pix_color = m.color;
+	float col_distance;
+	vec3 col_normal = vec3(0.);
+	int mat_id = 0;
+	
+	float reflection_weight;
+	float ref_weight_product = 1.0;
+	for(int i_reflection = 0; i_reflection < NUM_REFLECTIONS+1; i_reflection++) {
+		float col_distance;
+		vec3 col_normal = vec3(0.);
+		int mat_id      = 0;
+		vec3 object_point;
+		if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
+			vec3 cur_pix_color = vec3(0.);
+			Material m = get_material(mat_id); // get material of the intersected object
+			reflection_weight = m.mirror;
 
-		#if NUM_LIGHTS != 0
-		// for(int i_light = 0; i_light < NUM_LIGHTS; i_light++) {
-		// // do something for each light lights[i_light]
-		// }
-		#endif
+			object_point = ray_origin + col_distance * ray_direction;
+			vec3 direction_to_camera = -ray_direction;
+			vec3 ambient = light_color_ambient * m.ambient;
+			cur_pix_color = ambient * m.color;
+			for(int i = 0; i < NUM_LIGHTS; i++) {
+				cur_pix_color += lighting(object_point, col_normal, direction_to_camera, lights[i], m);
+			}
+			if(NUM_REFLECTIONS == 0)
+				return cur_pix_color;
+			pix_color += (1.0 - reflection_weight) * ref_weight_product * cur_pix_color;
+			ref_weight_product *= reflection_weight; 
+		}
+
+		ray_origin        = object_point + col_normal * 1e-3;
+		ray_direction     = reflect(ray_direction, col_normal);
+		
 	}
-
 	return pix_color;
 }
 

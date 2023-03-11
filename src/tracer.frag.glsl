@@ -381,7 +381,9 @@ vec3 lighting(
 	vec3 specular_phong, specular_blinn;
 	if(SHADING_MODE == SHADING_MODE_PHONG) {
 		vec3 reflection = reflect(-direction_to_light, object_normal);
-		if(dot(reflection, normalize(direction_to_camera)) < 0.)
+		if(dot(reflection, direction_to_camera) < 0.)
+			reflection = -reflection;
+		if(dot(reflection, normalize(direction_to_camera)) < 0. || dot(object_normal, direction_to_light) < 0.)
 			return diffuse;
 
 		specular_phong = light.color * mat.specular * mat.color * pow(dot(reflection, direction_to_camera), mat.shininess);
@@ -410,8 +412,8 @@ vec3 lighting(
 	vec3 col_normal;
 	int mat_id;
 
-	
-	shadow = ray_intersection(object_point + object_normal * 1e-3, shadow_ray, col_distance, col_normal, mat_id);
+	//origin slightly translated along the object normal to counter shadow acne
+	shadow = ray_intersection(object_point + object_normal*1e-3, shadow_ray, col_distance, col_normal, mat_id);
 	
 
 	vec3 intersection_point = object_point + col_distance * shadow_ray;
